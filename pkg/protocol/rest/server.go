@@ -21,15 +21,17 @@ func RunServer(ctx context.Context, grpcPort, httpPort string) error {
 
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithInsecure()}
+	// fs := http.FileServer(http.Dir("../../api/swagger/v1"))
+
+	// mux.Handle("/static", , http.StripPrefix("/static/", fs))
+
 	if err := v1.RegisterToDoServiceHandlerFromEndpoint(ctx, mux, "localhost:"+grpcPort, opts); err != nil {
 		log.Fatalf("failed to start HTTP gateway: %v", err)
 	}
-
 	srv := &http.Server{
 		Addr:    ":" + httpPort,
 		Handler: mux,
 	}
-
 	// graceful shutdown
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -47,3 +49,9 @@ func RunServer(ctx context.Context, grpcPort, httpPort string) error {
 	log.Println("starting HTTP/REST gateway...")
 	return srv.ListenAndServe()
 }
+
+// func runSer() {
+// 	fs := http.FileServer(http.Dir("../../api/swagger/v1"))
+// 	http.Handle("/static/", http.StripPrefix("/static/", fs))
+// 	http.ListenAndServe(":"+"8081", nil)
+// }

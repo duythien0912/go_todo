@@ -1,5 +1,6 @@
 {
   "swagger": "2.0",
+  "host": "http://localhost:8080",
   "info": {
     "title": "ToDo service",
     "version": "1.0",
