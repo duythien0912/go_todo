@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+
 	"google.golang.org/grpc"
 
 	"github.com/duythien0912/go_todo/pkg/api/v1"
@@ -19,15 +20,27 @@ func RunServer(ctx context.Context, grpcPort, httpPort string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	mux := runtime.NewServeMux()
+	mux := http.NewServeMux()
+
+	fs := http.FileServer(http.Dir("../../api/swagger/v1"))
+	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
+
+	gwmux := runtime.NewServeMux()
+
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	// fs := http.FileServer(http.Dir("../../api/swagger/v1"))
 
-	// mux.Handle("/static", , http.StripPrefix("/static/", fs))
-
-	if err := v1.RegisterToDoServiceHandlerFromEndpoint(ctx, mux, "localhost:"+grpcPort, opts); err != nil {
+	if err := v1.RegisterToDoServiceHandlerFromEndpoint(ctx, gwmux, "localhost:"+grpcPort, opts); err != nil {
 		log.Fatalf("failed to start HTTP gateway: %v", err)
 	}
+
+	mux.Handle("/", gwmux)
+
+	fs = http.FileServer(http.Dir("../../web/swagger/dist"))
+
+	prefix := "/docs/"
+
+	mux.Handle(prefix, http.StripPrefix(prefix, fs))
+
 	srv := &http.Server{
 		Addr:    ":" + httpPort,
 		Handler: mux,
